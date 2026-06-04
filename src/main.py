@@ -1,7 +1,7 @@
 from Estimador import Estimador
 
 def main() -> None:
-    print("Insira dados separados por virgula")
+    print("Insira dados distribuidos normalmente separados por virgula")
     amostra = [float(s) for s in input().replace(" ", "").split(",")]
     estimador = Estimador(amostra)
     estimador.mostrar_valores()
