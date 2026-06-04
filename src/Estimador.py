@@ -3,42 +3,57 @@ import statistics
 
 class Estimador:
     def __init__(self, amostra: list[float]):
+        if (len(amostra) < 2):
+            raise ValueError("A amostra deve conter pelo menos duas observações")
         self.amostra = amostra
         self.n = len(self.amostra)
-        self.media = statistics.mean(amostra)
-        self.desvio_padrao = statistics.stdev(self.amostra, self.media)
-        self.variancia = self.desvio_padrao ** 2
-        self.erro_padrao = self.desvio_padrao / math.sqrt(self.n)
+        self.media_amostral = statistics.mean(amostra)
+        self.desvio_padrao_amostral = statistics.stdev(self.amostra, self.media_amostral)
+        self.variancia_amostral = self.desvio_padrao_amostral ** 2
+        self.erro_padrao = self.desvio_padrao_amostral / math.sqrt(self.n)
     
     def mostrar_valores(self) -> None:
         print(f"n: {self.n}")
-        print(f"Media: {self.media}")
-        print(f"Desvio padrão: {self.desvio_padrao}")
-        print(f"Variancia: {self.variancia}")
+        print(f"Media amostral: {self.media_amostral}")
+        print(f"Desvio padrão amostral: {self.desvio_padrao_amostral}")
+        print(f"Variancia amostral: {self.variancia_amostral}")
+        print(f"Erro padrão: {self.erro_padrao}")
     
-    def validar_hipotese_media_bilateral(self, media_hipotese: float, alpha: float = 0.05) -> bool:
-        """
-        H0 : \mu = media_hipotese
-        H1 : \mu != media_hipotese
-        """
-        z_crit = statistics.NormalDist().inv_cdf(1 - alpha / 2)
-        z = (self.media - media_hipotese) / self.erro_padrao
-        return abs(z) <= z_crit
+    @staticmethod
+    def valor_critico_bilateral(alfa: float) -> float:
+        return statistics.NormalDist().inv_cdf(1 - alfa / 2) # Aproximação para varias amostras
     
-    def validar_hipotese_media_unilateral_maior(self, media_hipotese: float, alpha: float = 0.05) -> bool:
-        """
-        H0 : \mu = media_hipotese
-        H1 : \mu > media_hipotese
-        """
-        z_crit = statistics.NormalDist().inv_cdf(1 - alpha)
-        z = (self.media - media_hipotese) / self.erro_padrao
-        return z <= z_crit
+    @staticmethod
+    def valor_critico_unilateral_maior(alfa: float) -> float:
+        return statistics.NormalDist().inv_cdf(1 - alfa) # Aproximação para varias amostras
     
-    def validar_hipotese_media_unilateral_menor(self, media_hipotese: float, alpha: float = 0.05) -> bool:
+    @staticmethod
+    def valor_critico_unilateral_menor(alfa: float) -> float:
+        return statistics.NormalDist().inv_cdf(alfa) # Aproximação para varias amostras
+    
+    def t_escore(self, media_hipotese: float) -> float:
+        return (self.media_amostral - media_hipotese) / self.erro_padrao
+    
+    def valor_p_bilateral(self, media_hipotese: float) -> float:
+        """
+        H0 : \\mu = media_hipotese
+        H1 : \\mu != media_hipotese
+        """
+        t_escore = abs(self.t_escore(media_hipotese))
+        return 2 * (1 - statistics.NormalDist().cdf(t_escore))
+    
+    def valor_p_unilateral_maior(self, media_hipotese: float) -> float:
+        """
+        H0 : \\mu = media_hipotese
+        H1 : \\mu > media_hipotese
+        """
+        t_escore = self.t_escore(media_hipotese)
+        return 1 - statistics.NormalDist().cdf(t_escore)
+    
+    def valor_p_unilateral_menor(self, media_hipotese: float) -> float:
         """
         H0 : \\mu = media_hipotese
         H1 : \\mu < media_hipotese
         """
-        z_crit = statistics.NormalDist().inv_cdf(alpha)
-        z = (self.media - media_hipotese) / self.erro_padrao
-        return z >= z_crit
+        t_escore = self.t_escore(media_hipotese)
+        return statistics.NormalDist().cdf(t_escore)
