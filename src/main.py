@@ -59,8 +59,8 @@ class Aplicacao(Tk):
             state="readonly",
             values=[
                 "bilateral",
-                "unilateral_maior",
-                "unilateral_menor"
+                "unilateral à direita",
+                "unilateral à esquerda"
             ]
         ).grid(row=1, column=1, columnspan=2, sticky=W)
 
@@ -104,7 +104,7 @@ class Aplicacao(Tk):
                     f"H1: μ ≠ {mu0}"
                 )
 
-            elif tipo == "unilateral_maior":
+            elif tipo == "unilateral à direita":
                 valor_p = estimador.valor_p_unilateral_maior(mu0)
 
                 descricao = (
