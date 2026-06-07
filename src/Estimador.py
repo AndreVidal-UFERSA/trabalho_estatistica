@@ -31,7 +31,7 @@ class Estimador:
     def valor_critico_unilateral_menor(alfa: float) -> float:
         return statistics.NormalDist().inv_cdf(alfa) # Aproximação para varias amostras
     
-    def t_escore(self, media_hipotese: float) -> float:
+    def z_escore(self, media_hipotese: float) -> float:
         return (self.media_amostral - media_hipotese) / self.erro_padrao
     
     def valor_p_bilateral(self, media_hipotese: float) -> float:
@@ -39,21 +39,21 @@ class Estimador:
         H0 : \\mu = media_hipotese
         H1 : \\mu != media_hipotese
         """
-        t_escore = abs(self.t_escore(media_hipotese))
-        return 2 * (1 - statistics.NormalDist().cdf(t_escore))
+        z_escore = abs(self.z_escore(media_hipotese))
+        return 2 * (1 - statistics.NormalDist().cdf(z_escore))
     
     def valor_p_unilateral_maior(self, media_hipotese: float) -> float:
         """
         H0 : \\mu = media_hipotese
         H1 : \\mu > media_hipotese
         """
-        t_escore = self.t_escore(media_hipotese)
-        return 1 - statistics.NormalDist().cdf(t_escore)
+        z_escore = self.z_escore(media_hipotese)
+        return 1 - statistics.NormalDist().cdf(z_escore)
     
     def valor_p_unilateral_menor(self, media_hipotese: float) -> float:
         """
         H0 : \\mu = media_hipotese
         H1 : \\mu < media_hipotese
         """
-        t_escore = self.t_escore(media_hipotese)
-        return statistics.NormalDist().cdf(t_escore)
+        z_escore = self.z_escore(media_hipotese)
+        return statistics.NormalDist().cdf(z_escore)
