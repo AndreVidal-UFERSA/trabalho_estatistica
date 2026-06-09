@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 
 from Estimador import Estimador
+from graficos import mostrar_grafico
 
 
 class Aplicacao(Tk):
@@ -90,6 +91,8 @@ class Aplicacao(Tk):
             amostra = self.obter_amostra()
 
             estimador = Estimador(amostra)
+
+            mostrar_grafico(estimador)
 
             mu0 = float(self.entry_mu0.get())
             alpha = float(self.entry_alpha.get())
