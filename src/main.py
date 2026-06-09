@@ -45,6 +45,15 @@ class Aplicacao(Tk):
         self.entry_alpha.insert(0, "0.05")
         self.entry_alpha.grid(row=0, column=3, padx=5)
 
+        Label(frame_hipotese, text="μ₁:").grid(row=0, column=4, sticky=W)
+
+        self.entry_mu1 = Entry(frame_hipotese)
+        self.entry_mu1.grid(
+            row=0,
+            column=5,
+            padx=5
+)
+
         Label(frame_hipotese, text="Tipo de teste:").grid(
             row=1,
             column=0,
@@ -92,15 +101,28 @@ class Aplicacao(Tk):
 
             estimador = Estimador(amostra)
 
-            mostrar_grafico(estimador)
+
 
             mu0 = float(self.entry_mu0.get())
             alpha = float(self.entry_alpha.get())
+            mu1 = float(self.entry_mu1.get())
 
             tipo = self.tipo_teste.get()
 
             if tipo == "bilateral":
                 valor_p = estimador.valor_p_bilateral(mu0)
+
+                beta = estimador.beta_bilateral(
+                    mu0,
+                    mu1,
+                    alpha
+                )
+
+                poder = estimador.poder_bilateral(
+                    mu0,
+                    mu1,
+                    alpha
+                )
 
                 descricao = (
                     f"H0: μ = {mu0}\n"
@@ -110,6 +132,18 @@ class Aplicacao(Tk):
             elif tipo == "unilateral à direita":
                 valor_p = estimador.valor_p_unilateral_maior(mu0)
 
+                beta = estimador.beta_unilateral_maior(
+                    mu0,
+                    mu1,
+                    alpha
+                )
+
+                poder = estimador.poder_unilateral_maior(
+                    mu0,
+                    mu1,
+                    alpha
+                )
+
                 descricao = (
                     f"H0: μ = {mu0}\n"
                     f"H1: μ > {mu0}"
@@ -117,6 +151,18 @@ class Aplicacao(Tk):
 
             else:
                 valor_p = estimador.valor_p_unilateral_menor(mu0)
+
+                beta = estimador.beta_unilateral_menor(
+                    mu0,
+                    mu1,
+                    alpha
+                )
+
+                poder = estimador.poder_unilateral_menor(
+                    mu0,
+                    mu1,
+                    alpha
+                )
 
                 descricao = (
                     f"H0: μ = {mu0}\n"
@@ -158,6 +204,28 @@ class Aplicacao(Tk):
             )
 
             resultado.append("")
+            resultado.append("=== Valores críticos ===")
+            resultado.append(
+                f"Valor crítico bilateral = {estimador.valor_critico_bilateral(alpha):.6f}"
+                f"\nValor crítico unilateral à direita = {estimador.valor_critico_unilateral_maior(alpha):.6f}"
+                f"\nValor crítico unilateral à esquerda = {estimador.valor_critico_unilateral_menor(alpha):.6f}"
+            )
+            resultado.append("")
+            resultado.append("=== Erro Tipo II e Poder ===")
+
+            resultado.append(
+                f"μ₁ = {mu1:.6f}"
+            )
+
+            resultado.append(
+                f"β = {beta:.6f}"
+            )
+
+            resultado.append(
+                f"Poder = {poder:.6f}"
+            )
+
+            resultado.append("")
 
             if rejeita:
                 resultado.append(
@@ -173,6 +241,8 @@ class Aplicacao(Tk):
                 END,
                 "\n".join(resultado)
             )
+
+            mostrar_grafico(estimador, alpha)
 
         except Exception as erro:
             messagebox.showerror(
