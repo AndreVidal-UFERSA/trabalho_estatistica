@@ -52,7 +52,16 @@ class Aplicacao(Tk):
             row=0,
             column=5,
             padx=5
-)
+        )
+
+        Label(frame_hipotese, text="n do cco:").grid(row=0, column=6, sticky=W)
+
+        self.entry_n_cco = Entry(frame_hipotese)
+        self.entry_n_cco.grid(
+            row=0,
+            column=7,
+            padx=5
+        )
 
         Label(frame_hipotese, text="Tipo de teste:").grid(
             row=1,
@@ -107,6 +116,10 @@ class Aplicacao(Tk):
             mu0 = float(self.entry_mu0.get())
             alpha = float(self.entry_alpha.get())
             mu1 = float(self.entry_mu1.get())
+            if int(self.entry_n_cco.get()) <= 0:
+                n_cco = estimador.n
+            else:
+                n_cco = int(self.entry_n_cco.get())
 
             tipo = self.tipo_teste.get()
 
@@ -170,6 +183,9 @@ class Aplicacao(Tk):
             resultado.append(
                 f"Erro padrão = {estimador.erro_padrao:.6f}"
             )
+            resultado.append(
+                f"Variância = {estimador.variancia_amostral:.6f}"
+            )
 
             resultado.append("")
             resultado.append("=== Hipóteses ===")
@@ -222,13 +238,14 @@ class Aplicacao(Tk):
                 "\n".join(resultado)
             )
 
-            mostrar_grafico(estimador, alpha, mu0)
+            mostrar_grafico(estimador, alpha, mu0, n_cco)
 
         except Exception as erro:
             messagebox.showerror(
                 "Erro",
                 str(erro)
             )
+    
 
 
 if __name__ == "__main__":

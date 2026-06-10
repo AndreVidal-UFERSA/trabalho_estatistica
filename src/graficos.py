@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from Estimador import Estimador
 
-def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float) -> None:
+def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float, n_cco: int) -> None:
     fig, ax = plt.subplots(2, 2)
 
     # O intervalo de simulação das alternativas deve orbitar a hipótese testada (mu0)
@@ -13,7 +13,7 @@ def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float) -> None:
     betas = []
 
     # Para mostrar o efeito do tamanho da amostra, podemos calcular o beta para diferentes tamanhos de amostra
-    tamanhos_n = [max(2, estimador.n // 2),estimador.n, estimador.n * 2]
+    tamanhos_n = [max(2, n_cco // 2),n_cco, n_cco * 2]
 
     for mu in mus:
         beta = estimador.beta_unilateral_maior(
@@ -186,6 +186,7 @@ def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float) -> None:
     
     cco.set_xlabel("μ")
     cco.set_ylabel("β")
+    cco.set_xlim(mu0, mus[mus.size - 1])
 
     cco.grid(True, linestyle=":", alpha=0.6)
 
