@@ -26,39 +26,6 @@ def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float, n_cco: int) 
         
         print(f"μ={mu} -> β={beta}")
 
-    histogram = ax[0, 0]
-    histogram.set_title("Histograma da amostra")
-
-    histogram.hist(
-        estimador.amostra,
-        density=True,
-        bins="auto",
-        alpha=0.7
-    )
-
-    mu = estimador.media_amostral
-    sigma = estimador.desvio_padrao_amostral
-
-    x = np.linspace(
-        mu - 4 * sigma,
-        mu + 4 * sigma,
-        500
-    )
-
-    y = (
-        1 / (sigma * np.sqrt(2 * np.pi))
-        * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
-    )
-
-    histogram.plot(
-        x,
-        y,
-        linewidth=2,
-        label="Normal estimada"
-    )
-
-    histogram.legend()
-
     chart_uni = ax[0, 1]
     chart_uni.set_title("Região de rejeição maior e menor")
 
@@ -192,6 +159,68 @@ def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float, n_cco: int) 
 
     cco.legend()
 
+    cco = ax[0, 0]
+
+    cco.set_title("CCO PODER")
+
+    for n_teste in tamanhos_n:
+        erro_padrao_simulado = estimador.desvio_padrao_amostral / math.sqrt(n_teste)
+        
+        betas_n = []
+        for mu in mus:
+            z_critico = statistics.NormalDist().inv_cdf(1 - alpha)
+            ponto_corte = mu0 + (z_critico * erro_padrao_simulado)
+            z_beta = (ponto_corte - mu) / erro_padrao_simulado
+            betas_n.append(1-(statistics.NormalDist().cdf(z_beta)))
+            
+        # O Matplotlib vai plotar uma linha de cada cor automaticamente para cada n
+        cco.plot(mus, betas_n, label=f"n = {n_teste}")
+    
+    cco.set_xlabel("μ")
+    cco.set_ylabel("β")
+    cco.set_xlim(mu0, mus[mus.size - 1])
+
+    cco.grid(True, linestyle=":", alpha=0.6)
+
+    cco.legend()
+
     plt.tight_layout()
     plt.show()
+
+
+
+'''
+    histogram = ax[0, 0]
+    histogram.set_title("Histograma da amostra")
+
+    histogram.hist(
+        estimador.amostra,
+        density=True,
+        bins="auto",
+        alpha=0.7
+    )
+
+    mu = estimador.media_amostral
+    sigma = estimador.desvio_padrao_amostral
+
+    x = np.linspace(
+        mu - 4 * sigma,
+        mu + 4 * sigma,
+        500
+    )
+
+    y = (
+        1 / (sigma * np.sqrt(2 * np.pi))
+        * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+    )
+
+    histogram.plot(
+        x,
+        y,
+        linewidth=2,
+        label="Normal estimada"
+    )
+
+    histogram.legend()
+'''
     
