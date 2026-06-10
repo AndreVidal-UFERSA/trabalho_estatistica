@@ -5,6 +5,47 @@ import matplotlib.pyplot as plt
 import numpy as np
 from Estimador import Estimador
 
+def mostrar_grafico_duas_amostras(est_A, est_B):
+    """
+    Gera uma janela do Matplotlib comparando visualmente as duas distribuições
+    amostrais baseadas em suas médias e desvios padrões calculados.
+    """
+    plt.figure("Comparação de Duas Amostras", figsize=(10, 6))
+    
+    # Define os limites do eixo X cobrindo 4 desvios padrões para a esquerda e direita de ambas as curvas
+    x_min = min(est_A.media_amostral - 4 * est_A.desvio_padrao_amostral, 
+                est_B.media_amostral - 4 * est_B.desvio_padrao_amostral)
+    x_max = max(est_A.media_amostral + 4 * est_A.desvio_padrao_amostral, 
+                est_B.media_amostral + 4 * est_B.desvio_padrao_amostral)
+    
+    x = np.linspace(x_min, x_max, 500)
+    
+    # Curva da Amostra A
+    y_A = (1 / (est_A.desvio_padrao_amostral * np.sqrt(2 * np.pi)) * np.exp(-0.5 * ((x - est_A.media_amostral) / est_A.desvio_padrao_amostral) ** 2))
+    plt.plot(x, y_A, label=f"Amostra A ($\mu$ = {est_A.media_amostral:.2f}, $s$ = {est_A.desvio_padrao_amostral:.2f})", 
+             color="#1f77b4", linewidth=2.5)
+    plt.fill_between(x, y_A, color="#1f77b4", alpha=0.15)
+    
+    # Curva da Amostra B
+    y_B = (1 / (est_B.desvio_padrao_amostral * np.sqrt(2 * np.pi)) * np.exp(-0.5 * ((x - est_B.media_amostral) / est_B.desvio_padrao_amostral) ** 2))
+    plt.plot(x, y_B, label=f"Amostra B ($\mu$ = {est_B.media_amostral:.2f}, $s$ = {est_B.desvio_padrao_amostral:.2f})", 
+             color="#ff7f0e", linewidth=2.5)
+    plt.fill_between(x, y_B, color="#ff7f0e", alpha=0.15)
+    
+    # Linhas verticais indicando onde ficam as médias reais encontradas
+    plt.axvline(est_A.media_amostral, color="#1f77b4", linestyle="--", alpha=0.7)
+    plt.axvline(est_B.media_amostral, color="#ff7f0e", linestyle="--", alpha=0.7)
+    
+    # Estilização do gráfico (idêntica ao padrão do seu projeto)
+    plt.title("Afastamento Visual entre as Populações A e B", fontsize=14, pad=15)
+    plt.xlabel("Valores", fontsize=12)
+    plt.ylabel("Densidade de Probabilidade", fontsize=12)
+    plt.grid(True, linestyle=":", alpha=0.6)
+    plt.legend(fontsize=11, loc="upper right")
+    
+    plt.tight_layout()
+    plt.show()
+
 def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float, n_cco: int, tipo_grafico: str) -> None:
     """
     Gera uma matriz de gráficos 2x2 para análise estatística da amostra e dos testes de hipótese.

@@ -1,349 +1,242 @@
+import math
+import statistics
 from tkinter import *
-from tkinter import ttk, messagebox
+from tkinter import messagebox, ttk
 
 from Estimador import Estimador
 from graficos import mostrar_grafico
+from graficos import mostrar_grafico, mostrar_grafico_duas_amostras
+
+
+class JanelaDuasAmostras(Toplevel):
+    """
+    Sub-janela (Pop-up) para entrada de dados de duas amostras independentes.
+    """
+    def __init__(self, pai):
+        super().__init__(pai)
+        self.pai = pai
+        self.title("Teste de Duas Amostras Independentes")
+        self.geometry("500x450")
+        self.transient(pai)  # Mantém a janela sempre acima da principal
+        self.focus_set()     # Joga o foco para cá
+        
+        self.criar_widgets()
+
+    def criar_widgets(self):
+        # Amostra A
+        Label(self, text="Amostra A (números separados por vírgula ou espaço):").pack(pady=(10, 0))
+        self.txt_A = Text(self, height=4)
+        self.txt_A.pack(fill=X, padx=10)
+        
+        # Amostra B
+        Label(self, text="Amostra B (números separados por vírgula ou espaço):").pack(pady=(10, 0))
+        self.txt_B = Text(self, height=4)
+        self.txt_B.pack(fill=X, padx=10)
+        
+        # Parâmetros adicionais
+        frame_param = Frame(self)
+        frame_param.pack(fill=X, padx=10, pady=15)
+        
+        Label(frame_param, text="Nível de Significância (α):").grid(row=0, column=0, sticky=W)
+        self.entry_alpha = Entry(frame_param, width=10)
+        self.entry_alpha.insert(0, "0.05")
+        self.entry_alpha.grid(row=0, column=1, padx=5)
+        
+        # Botão de Ação interno
+        Button(
+            self, 
+            text="Calcular Teste das Duas Amostras", 
+            command=self.processar_teste,
+            bg="#c8e6c9",
+            fg="black"
+        ).pack(pady=10)
+
+    def processar_teste(self):
+        try:
+            # Captura e limpa o texto da Amostra A
+            texto_A = self.txt_A.get("1.0", END).replace(",", " ")
+            dados_A = [float(v) for v in texto_A.split()]
+            
+            # Captura e limpa o texto da Amostra B
+            texto_B = self.txt_B.get("1.0", END).replace(",", " ")
+            dados_B = [float(v) for v in texto_B.split()]
+            
+            alpha = float(self.entry_alpha.get())
+
+            if not dados_A or not dados_B:
+                raise ValueError("Ambas as amostras precisam ter pelo menos um número!")
+
+            # Instancia os estimadores usando a classe padrão
+            est_A = Estimador(dados_A)
+            est_B = Estimador(dados_B)
+
+            # Cálculos Inferenciais Combinados (Bilateral)
+            diferenca = est_A.media_amostral - est_B.media_amostral
+            erro_combinado = math.sqrt((est_A.variancia_amostral / est_A.n) + (est_B.variancia_amostral / est_B.n))
+            z_calc = (diferenca - 0) / erro_combinado
+            
+            z_critico = statistics.NormalDist().inv_cdf(1 - alpha / 2)
+            p_valor = 2 * (1 - statistics.NormalDist().cdf(abs(z_calc)))
+            
+            rejeita = abs(z_calc) > z_critico
+            conclusao = "Rejeitar H0 (Médias são estatisticamente Diferentes)" if rejeita else "Não Rejeitar H0 (Médias são Iguais)"
+
+            # Montagem do relatório
+            relatorio = []
+            relatorio.append("=== TESTE DE COMPARAÇÃO DE DUAS MÉDIAS ===")
+            relatorio.append(f"Amostra A: n = {est_A.n} | Média = {est_A.media_amostral:.4f} | Var = {est_A.variancia_amostral:.4f}")
+            relatorio.append(f"Amostra B: n = {est_B.n} | Média = {est_B.media_amostral:.4f} | Var = {est_B.variancia_amostral:.4f}")
+            relatorio.append("\n=== Hipóteses ===")
+            relatorio.append("H0: μA = μB\nH1: μA ≠ μB")
+            relatorio.append("\n=== Resultados Obtidos ===")
+            relatorio.append(f"Estatística Z calculada = {z_calc:.6f}")
+            relatorio.append(f"Região Crítica (RC) = Z < {-z_critico:.4f} ou Z > {z_critico:.4f}")
+            relatorio.append(f"Nível de significância (α) = {alpha:.2f}")
+            relatorio.append(f"Valor-p obtido = {p_valor:.6f} ({p_valor:.4e})")
+            relatorio.append(f"\nDecisão Formal: {conclusao}")
+
+            # Atualiza a caixa de texto da janela principal e fecha o pop-up
+            self.pai.txt_resultado.delete("1.0", END)
+            self.pai.txt_resultado.insert(END, "\n".join(relatorio))
+            # ... (código anterior da montagem do relatório) ...
+            self.pai.txt_resultado.delete("1.0", END)
+            self.pai.txt_resultado.insert(END, "\n".join(relatorio))
+
+            # ESSA LINHA DISPARA O GRÁFICO ANTES DE FECHAR O POP-UP:
+            mostrar_grafico_duas_amostras(est_A, est_B)
+
+            self.destroy()
+        except Exception as erro:
+            messagebox.showerror("Erro no Cálculo", str(erro), parent=self)
 
 
 class Aplicacao(Tk):
     def __init__(self):
-        """
-        Inicializa a janela principal da aplicação, definindo o título,
-        o tamanho inicial da tela e disparando a construção dos elementos visuais.
-        """
         super().__init__()
-
         self.title("Teste de Hipótese")
-        self.geometry("700x500")
-
-        # Chama o método responsável por renderizar a interface do usuário (UI)
+        self.geometry("730x530")
         self.criar_widgets()
 
     def criar_widgets(self) -> None:
-        """
-        Cria, configura e posiciona todos os componentes visuais (widgets)
-        da interface usando gerenciadores de layout (pack e grid).
-        """
-
-        # --- SEÇÃO 1: CAMPO DE ENTRADA DA AMOSTRA ---
-        Label(
-            self,
-            text="Amostra (números separados por vírgula ou espaço)"
-        ).pack(pady=(10, 0))
-
-        # Caixa de texto multilinha para suportar grandes volumes de dados da amostra
+        # --- SEÇÃO 1: CAMPO DE ENTRADA DA AMOSTRA (UMA AMOSTRA) ---
+        Label(self, text="Amostra (números separados por vírgula ou espaço) - Teste Clássico").pack(pady=(10, 0))
         self.txt_amostra = Text(self, height=5)
         self.txt_amostra.pack(fill=X, padx=10)
 
         # --- SEÇÃO 2: PARÂMETROS DO TESTE (GRID LOGÍSTICO) ---
-        # Frame utilizado para agrupar e organizar os campos numéricos lado a lado
         frame_hipotese = Frame(self)
         frame_hipotese.pack(fill=X, padx=10, pady=10)
 
-        # Campo: Média sob a hipótese nula (μ₀)
-        Label(frame_hipotese, text="Média da hipótese (μ₀):").grid(
-            row=0,
-            column=0,
-            sticky=W
-        )
-
+        Label(frame_hipotese, text="Média da hipótese (μ₀):").grid(row=0, column=0, sticky=W)
         self.entry_mu0 = Entry(frame_hipotese)
         self.entry_mu0.grid(row=0, column=1, padx=5)
 
-        # Campo: Nível de significância do teste (α)
-        Label(frame_hipotese, text="α:").grid(
-            row=0,
-            column=2,
-            sticky=W
-        )
-
+        Label(frame_hipotese, text="α:").grid(row=0, column=2, sticky=W)
         self.entry_alpha = Entry(frame_hipotese)
-        self.entry_alpha.insert(0, "0.05") # Define 5% como o padrão estatístico comum
+        self.entry_alpha.insert(0, "0.05")
         self.entry_alpha.grid(row=0, column=3, padx=5)
 
-        # Campo: Média alternativa (μ₁) para cálculo do Erro Tipo II (Beta)
-        Label(frame_hipotese, text="μ₁:").grid(
-            row=0,
-            column=4,
-            sticky=W
-        )
-
+        Label(frame_hipotese, text="μ₁:").grid(row=0, column=4, sticky=W)
         self.entry_mu1 = Entry(frame_hipotese)
-        self.entry_mu1.grid(
-            row=0,
-            column=5,
-            padx=5
-        )
+        self.entry_mu1.grid(row=0, column=5, padx=5)
 
-        # Campo: Tamanho amostral customizado para simulação nas curvas CCO
-        Label(frame_hipotese, text="n do cco:").grid(
-            row=0,
-            column=6,
-            sticky=W
-        )
-
+        Label(frame_hipotese, text="n do cco:").grid(row=0, column=6, sticky=W)
         self.entry_n_cco = Entry(frame_hipotese)
-        self.entry_n_cco.grid(
-            row=0,
-            column=7,
-            padx=5
-        )
+        self.entry_n_cco.grid(row=0, column=7, padx=5)
 
-        # --- SEÇÃO 3: SELEÇÃO DE TIPOS DE TESTE E GRÁFICOS ---
-        # Rótulo e Combobox para a cauda do teste estatístico
-        Label(frame_hipotese, text="Tipo de teste:").grid(
-            row=1,
-            column=0,
-            sticky=W,
-            pady=10
-        )
-
+        Label(frame_hipotese, text="Tipo de teste:").grid(row=1, column=0, sticky=W, pady=10)
         self.tipo_teste = StringVar(value="bilateral")
         self.tipo_grafico = StringVar(value="bilateral")
 
-        ttk.Combobox(
-            frame_hipotese,
-            textvariable=self.tipo_teste,
-            state="readonly",
-            values=[
-                "bilateral",
-                "unilateral à direita",
-                "unilateral à esquerda"
-            ]
-        ).grid(row=1, column=1, columnspan=2, sticky=W)
+        ttk.Combobox(frame_hipotese, textvariable=self.tipo_teste, state="readonly",
+                     values=["bilateral", "unilateral à direita", "unilateral à esquerda"]).grid(row=1, column=1, columnspan=2, sticky=W)
 
-        # Rótulo e Combobox para determinar o comportamento do Quadrante [1, 0] do Matplotlib
-        Label(frame_hipotese, text="Tipo de gráfico:").grid(
-            row=1,
-            column=3,
-            sticky=W,
-            pady=10
-        )
+        Label(frame_hipotese, text="Tipo de gráfico:").grid(row=1, column=3, sticky=W, pady=10)
+        ttk.Combobox(frame_hipotese, textvariable=self.tipo_grafico, state="readonly",
+                     values=["bilateral", "histograma"]).grid(row=1, column=4, columnspan=2, sticky=W)
 
-        ttk.Combobox(
-            frame_hipotese,
-            textvariable=self.tipo_grafico,
-            state="readonly",
-            values=[
-                "bilateral",
-                "histograma",
-            ]
-        ).grid(row=1, column=4, columnspan=2, sticky=W)
+        # --- SEÇÃO 4: BOTÕES DE DISPARO ---
+        frame_botoes = Frame(self)
+        frame_botoes.pack(pady=5)
 
-        # --- SEÇÃO 4: BOTÃO DE DISPARO ---
-        # Botão principal que aciona o motor de cálculos estatísticos e plotagem
+        Button(frame_botoes, text="Executar Teste Clássico (1 Amostra)", command=self.executar_teste).grid(row=0, column=0, padx=5)
+        
+        # MODIFICADO: Esse botão agora abre o menu pop-up dinâmico
         Button(
-            self,
-            text="Executar Teste",
-            command=self.executar_teste
-        ).pack(pady=10)
+            frame_botoes, 
+            text="Abrir Menu: Duas Amostras", 
+            command=self.abrir_menu_duas_amostras,
+            bg="#e1f5fe"
+        ).grid(row=0, column=1, padx=5)
 
         # --- SEÇÃO 5: VISUALIZAÇÃO DO RELATÓRIO ---
         Label(self, text="Resultado").pack()
-
-        # Área de texto protegida que exibirá o relatório detalhado formatado
         self.txt_resultado = Text(self, height=15)
-        self.txt_resultado.pack(
-            fill=BOTH,
-            expand=True,
-            padx=10,
-            pady=10
-        )
+        self.txt_resultado.pack(fill=BOTH, expand=True, padx=10, pady=10)
 
     def obter_amostra(self) -> list[float]:
-        """
-        Extrai o texto bruto digitado pelo usuário, limpa e padroniza os delimitadores
-        (espaços ou vírgulas) e converte o resultado em uma lista de floats estruturada.
-        """
-        # Captura todo o texto contido na caixa do início (1.0) até o fim (END)
-        texto = self.txt_amostra.get("1.0", END)
+        texto = self.txt_amostra.get("1.0", END).replace(",", " ")
+        return [float(valor) for valor in texto.split()]
 
-        # Permite separar valores por vírgula ou espaço substituindo vírgulas por espaços simples
-        texto = texto.replace(",", " ")
-
-        # Divide a string e gera a lista via list comprehension ignorando espaços extras
-        return [
-            float(valor)
-            for valor in texto.split()
-        ]
+    def abrir_menu_duas_amostras(self):
+        """Dispara a abertura da sub-janela"""
+        JanelaDuasAmostras(self)
 
     def executar_teste(self) -> None:
-        """
-        Gerenciador central do teste de hipótese. Controla o fluxo de captura de dados,
-        processamento matemático via classe Estimador, formatação do relatório textual
-        no widget Tkinter e renderização da janela de gráficos.
-        """
         try:
-            # Obtém a amostra informada pelo usuário
             amostra = self.obter_amostra()
-
-            # Cria o objeto responsável pelos cálculos estatísticos descritivos e inferenciais
             estimador = Estimador(amostra)
-
-            # Exibe os valores no terminal para depuração
             estimador.mostrar_valores()
 
-            # Leitura e conversão dos parâmetros quantitativos informados na UI
             mu0 = float(self.entry_mu0.get())
             alpha = float(self.entry_alpha.get())
             mu1 = float(self.entry_mu1.get())
 
-            # Caso o usuário informe um valor inválido ou zerado/negativo,
-            # utiliza o tamanho padrão da amostra coletada (estimador.n)
             if int(self.entry_n_cco.get()) <= 0:
                 n_cco = estimador.n
             else:
                 n_cco = int(self.entry_n_cco.get())
 
-            # Captura as strings de configuração selecionadas nos Comboboxes
             tipo = self.tipo_teste.get()
             tipo_grafico = self.tipo_grafico.get()
 
-            # --- PROCESSAMENTO CONDICIONAL DO MODELO MATEMÁTICO ---
-            # Seleciona o tipo de teste e calcula valor-p e erro tipo II correspondentes
             if tipo == "bilateral":
                 valor_p = estimador.valor_p_bilateral(mu0)
-
-                beta = estimador.beta_bilateral(
-                    mu0,
-                    mu1,
-                    alpha
-                )
-
-                descricao = (
-                    f"H0: μ = {mu0}\n"
-                    f"H1: μ ≠ {mu0}"
-                )
-
+                beta = estimador.beta_bilateral(mu0, mu1, alpha)
+                descricao = f"H0: μ = {mu0}\nH1: μ ≠ {mu0}"
             elif tipo == "unilateral à direita":
                 valor_p = estimador.valor_p_unilateral_maior(mu0)
-
-                beta = estimador.beta_unilateral_maior(
-                    mu0,
-                    mu1,
-                    alpha
-                )
-
-                descricao = (
-                    f"H0: μ = {mu0}\n"
-                    f"H1: μ > {mu0}"
-                )
-
+                beta = estimador.beta_unilateral_maior(mu0, mu1, alpha)
+                descricao = f"H0: μ = {mu0}\nH1: μ > {mu0}"
             else:
                 valor_p = estimador.valor_p_unilateral_menor(mu0)
+                beta = estimador.beta_unilateral_menor(mu0, mu1, alpha)
+                descricao = f"H0: μ = {mu0}\nH1: μ < {mu0}"
 
-                beta = estimador.beta_unilateral_menor(
-                    mu0,
-                    mu1,
-                    alpha
-                )
-
-                descricao = (
-                    f"H0: μ = {mu0}\n"
-                    f"H1: μ < {mu0}"
-                )
-
-            # Estatística de teste padronizada (Z-score ou t-score aproximado)
             estatistica = estimador.z_escore(mu0)
-
-            # Critério de Decisão Estatística: Rejeita H0 se o valor-p for estritamente menor que alfa
             rejeita = valor_p < alpha
 
-            # --- CONSTRUÇÃO DO CORPO TEXTUAL DO RELATÓRIO ---
-            resultado = []
+            resultado = ["=== Estatísticas da Amostra ===", f"n = {estimador.n}",
+                         f"Média = {estimador.media_amostral:.6f}", f"Desvio padrão = {estimador.desvio_padrao_amostral:.6f}",
+                         f"Erro padrão = {estimador.erro_padrao:.6f}", f"Variância = {estimador.variancia_amostral:.6f}",
+                         "\n=== Hipóteses ===", descricao, "\n=== Resultado ===", f"Estatística de teste = {estatistica:.6f}",
+                         f"Valor-p = {valor_p:.6f}", f"α = {alpha:.6f}", "\n=== Valores críticos ===",
+                         f"Valor crítico bilateral = {estimador.valor_critico_bilateral(alpha):.6f}\nValor crítico unilateral à direita = {estimador.valor_critico_unilateral_maior(alpha):.6f}\nValor crítico unilateral à esquerda = {estimador.valor_critico_unilateral_menor(alpha):.6f}",
+                         "\n=== Erro Tipo II e Poder ===", f"μ₁ = {mu1:.6f}", f"β = {beta:.6f}\n"]
 
-            # Bloco 1: Métricas descritivas observadas
-            resultado.append("=== Estatísticas da Amostra ===")
-            resultado.append(f"n = {estimador.n}")
-            resultado.append(
-                f"Média = {estimador.media_amostral:.6f}"
-            )
-            resultado.append(
-                f"Desvio padrão = {estimador.desvio_padrao_amostral:.6f}"
-            )
-            resultado.append(
-                f"Erro padrão = {estimador.erro_padrao:.6f}"
-            )
-            resultado.append(
-                f"Variância = {estimador.variancia_amostral:.6f}"
-            )
-
-            # Bloco 2: Definição formal das hipóteses do teste em execução
-            resultado.append("")
-            resultado.append("=== Hipóteses ===")
-            resultado.append(descricao)
-
-            # Bloco 3: Evidências estatísticas e nível de significância crítico
-            resultado.append("")
-            resultado.append("=== Resultado ===")
-            resultado.append(
-                f"Estatística de teste = {estatistica:.6f}"
-            )
-            resultado.append(
-                f"Valor-p = {valor_p:.6f}"
-            )
-            resultado.append(
-                f"α = {alpha:.6f}"
-            )
-
-            # Bloco 4: Fronteiras de corte teóricas para consulta do analista
-            resultado.append("")
-            resultado.append("=== Valores críticos ===")
-            resultado.append(
-                f"Valor crítico bilateral = {estimador.valor_critico_bilateral(alpha):.6f}"
-                f"\nValor crítico unilateral à direita = {estimador.valor_critico_unilateral_maior(alpha):.6f}"
-                f"\nValor crítico unilateral à esquerda = {estimador.valor_critico_unilateral_menor(alpha):.6f}"
-            )
-
-            # Bloco 5: Probabilidade do erro de segunda espécie (Beta) e Poder do teste para μ₁
-            resultado.append("")
-            resultado.append("=== Erro Tipo II e Poder ===")
-            resultado.append(
-                f"μ₁ = {mu1:.6f}"
-            )
-            resultado.append(
-                f"β = {beta:.6f}"
-            )
-
-            resultado.append("")
-
-            # Bloco 6: Veredito e inferência baseados no critério de rejeição
             if rejeita:
-                resultado.append(
-                    "Conclusão: Rejeitar H0"
-                )
+                resultado.append("Conclusão: Rejeitar H0")
             else:
-                resultado.append(
-                    "Conclusão: Não rejeitar H0"
-                )
+                resultado.append("Conclusão: Não rejeitar H0")
 
-            # --- ATUALIZAÇÃO DA INTERFACE GRÁFICA (SAÍDA) ---
-            # Limpa qualquer resíduo de relatórios anteriores do campo de texto
             self.txt_resultado.delete("1.0", END)
-            # Insere a nova string construída unindo os elementos da lista com quebras de linha
-            self.txt_resultado.insert(
-                END,
-                "\n".join(resultado)
-            )
+            self.txt_resultado.insert(END, "\n".join(resultado))
 
-            # Dispara a sub-rotina do matplotlib para renderizar os 4 quadrantes analíticos
-            mostrar_grafico(
-                estimador,
-                alpha,
-                mu0,
-                n_cco,
-                tipo_grafico
-            )
+            mostrar_grafico(estimador, alpha, mu0, n_cco, tipo_grafico)
 
         except Exception as erro:
-            # Captura falhas de digitação, divisão por zero ou conversões inválidas, 
-            # exibindo em uma caixa de diálogo segura do sistema operacional
-            messagebox.showerror(
-                "Erro",
-                str(erro)
-            )
+            messagebox.showerror("Erro", str(erro))
 
 
 if __name__ == "__main__":
-    # Ponto de entrada do script: instancia o loop de eventos infinito do Tkinter
     Aplicacao().mainloop()
