@@ -59,121 +59,23 @@ class Estimador:
         return statistics.NormalDist().cdf(z_escore)
     
     def beta_unilateral_maior(self, media_hipotese: float, media_alternativa: float, alfa: float) -> float:
-        """
-        β para:
-        H0: μ = media_hipotese
-        H1: μ > media_hipotese
-        """
-
         z_critico = self.valor_critico_unilateral_maior(alfa)
+        z_beta = (z_critico * self.erro_padrao - (media_alternativa - media_hipotese)) / self.erro_padrao
+        return statistics.NormalDist().cdf(z_beta)
+    
 
-        ponto_critico = (
-            media_hipotese
-            + z_critico * self.erro_padrao
-        )
-
-        z = (
-            ponto_critico - media_alternativa
-        ) / self.erro_padrao
-
-        return statistics.NormalDist().cdf(z)
-
-
-    def beta_unilateral_menor(
-        self,
-        media_hipotese: float,
-        media_alternativa: float,
-        alfa: float
-    ) -> float:
-        """
-        β para:
-        H0: μ = media_hipotese
-        H1: μ < media_hipotese
-        """
-
-        z_critico = self.valor_critico_unilateral_menor(alfa)
-
-        ponto_critico = (
-            media_hipotese
-            + z_critico * self.erro_padrao
-        )
-
-        z = (
-            ponto_critico - media_alternativa
-        ) / self.erro_padrao
-
-        return 1 - statistics.NormalDist().cdf(z)
-
-
-    def beta_bilateral(
-        self,
-        media_hipotese: float,
-        media_alternativa: float,
-        alfa: float
-    ) -> float:
-        """
-        β para:
-        H0: μ = media_hipotese
-        H1: μ != media_hipotese
-        """
-
-        z_critico = self.valor_critico_bilateral(alfa)
-
-        limite_inferior = (
-            media_hipotese
-            - z_critico * self.erro_padrao
-        )
-
-        limite_superior = (
-            media_hipotese
-            + z_critico * self.erro_padrao
-        )
-
-        normal = statistics.NormalDist(
-            mu=media_alternativa,
-            sigma=self.erro_padrao
-        )
-
-        return (
-            normal.cdf(limite_superior)
-            - normal.cdf(limite_inferior)
-        )
-
-
-    def poder_unilateral_maior(
-        self,
-        media_hipotese: float,
-        media_alternativa: float,
-        alfa: float
-    ) -> float:
-        return 1 - self.beta_unilateral_maior(
-            media_hipotese,
-            media_alternativa,
-            alfa
-        )
-
-
-    def poder_unilateral_menor(
-        self,
-        media_hipotese: float,
-        media_alternativa: float,
-        alfa: float
-    ) -> float:
-        return 1 - self.beta_unilateral_menor(
-            media_hipotese,
-            media_alternativa,
-            alfa
-        )
-
-
-    def poder_bilateral(
-        self,
-        media_hipotese: float,
-        media_alternativa: float,
-        alfa: float
-    ) -> float:
-        return 1 - self.beta_bilateral(
-            media_hipotese,
-            media_alternativa,
-            alfa
-        )
+    def beta_unilateral_menor(self, media_hipotese: float, media_alternativa: float, alfa: float) -> float:
+        z_critico = self.valor_critico_unilateral_menor(alfa) 
+        z_beta = (z_critico * self.erro_padrao - (media_alternativa - media_hipotese)) / self.erro_padrao
+        return 1 - statistics.NormalDist().cdf(z_beta)
+    
+    def beta_bilateral(self, media_hipotese: float, media_alternativa: float, alfa: float) -> float:
+        z_critico_superior = self.valor_critico_unilateral_maior(alfa / 2)
+        z_critico_inferior = self.valor_critico_unilateral_menor(alfa / 2)
+        
+        z_beta_superior = (z_critico_superior * self.erro_padrao - (media_alternativa - media_hipotese)) / self.erro_padrao
+        z_beta_inferior = (z_critico_inferior * self.erro_padrao - (media_alternativa - media_hipotese)) / self.erro_padrao
+        
+        dist = statistics.NormalDist()
+        return dist.cdf(z_beta_superior) - dist.cdf(z_beta_inferior)
+        

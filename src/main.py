@@ -100,6 +100,7 @@ class Aplicacao(Tk):
             amostra = self.obter_amostra()
 
             estimador = Estimador(amostra)
+            estimador.mostrar_valores()
 
 
 
@@ -113,12 +114,6 @@ class Aplicacao(Tk):
                 valor_p = estimador.valor_p_bilateral(mu0)
 
                 beta = estimador.beta_bilateral(
-                    mu0,
-                    mu1,
-                    alpha
-                )
-
-                poder = estimador.poder_bilateral(
                     mu0,
                     mu1,
                     alpha
@@ -138,12 +133,6 @@ class Aplicacao(Tk):
                     alpha
                 )
 
-                poder = estimador.poder_unilateral_maior(
-                    mu0,
-                    mu1,
-                    alpha
-                )
-
                 descricao = (
                     f"H0: μ = {mu0}\n"
                     f"H1: μ > {mu0}"
@@ -158,11 +147,6 @@ class Aplicacao(Tk):
                     alpha
                 )
 
-                poder = estimador.poder_unilateral_menor(
-                    mu0,
-                    mu1,
-                    alpha
-                )
 
                 descricao = (
                     f"H0: μ = {mu0}\n"
@@ -221,10 +205,6 @@ class Aplicacao(Tk):
                 f"β = {beta:.6f}"
             )
 
-            resultado.append(
-                f"Poder = {poder:.6f}"
-            )
-
             resultado.append("")
 
             if rejeita:
@@ -242,7 +222,7 @@ class Aplicacao(Tk):
                 "\n".join(resultado)
             )
 
-            mostrar_grafico(estimador, alpha)
+            mostrar_grafico(estimador, alpha, mu0)
 
         except Exception as erro:
             messagebox.showerror(
