@@ -5,41 +5,58 @@ import matplotlib.pyplot as plt
 import numpy as np
 from Estimador import Estimador
 
-def mostrar_grafico_duas_amostras(est_A, est_B):
+def mostrar_grafico_duas_amostras(est_A, est_B, alpha=0.05):
     """
-    Gera uma janela do Matplotlib comparando visualmente as duas distribuições
-    amostrais baseadas em suas médias e desvios padrões calculados.
+    Gera a Curva Característica de Operação (CCO) para o teste de duas amostras independentes.
+    Mostra o Erro Tipo II (Beta) em função da verdadeira diferença entre as médias.
     """
-    plt.figure("Comparação de Duas Amostras", figsize=(10, 6))
+    # 1. Calcula o erro padrão combinado real das duas amostras
+    erro_combinado = np.sqrt((est_A.variancia_amostral / est_A.n) + (est_B.variancia_amostral / est_B.n))
     
-    # Define os limites do eixo X cobrindo 4 desvios padrões para a esquerda e direita de ambas as curvas
-    x_min = min(est_A.media_amostral - 4 * est_A.desvio_padrao_amostral, 
-                est_B.media_amostral - 4 * est_B.desvio_padrao_amostral)
-    x_max = max(est_A.media_amostral + 4 * est_A.desvio_padrao_amostral, 
-                est_B.media_amostral + 4 * est_B.desvio_padrao_amostral)
+    # 2. Encontra o valor crítico Z para um teste bilateral
+    z_critico = statistics.NormalDist().inv_cdf(1 - alpha / 2)
     
-    x = np.linspace(x_min, x_max, 500)
+    # 3. Cria um intervalo de possíveis diferenças reais entre as médias (Eixo X do gráfico)
+    # Vamos cobrir desde uma diferença de -6 até +6 para o gráfico ficar amplo
+    valores_diferenca_real = np.linspace(-6, 6, 500)
     
-    # Curva da Amostra A
-    y_A = (1 / (est_A.desvio_padrao_amostral * np.sqrt(2 * np.pi)) * np.exp(-0.5 * ((x - est_A.media_amostral) / est_A.desvio_padrao_amostral) ** 2))
-    plt.plot(x, y_A, label=f"Amostra A ($\mu$ = {est_A.media_amostral:.2f}, $s$ = {est_A.desvio_padrao_amostral:.2f})", 
-             color="#1f77b4", linewidth=2.5)
-    plt.fill_between(x, y_A, color="#1f77b4", alpha=0.15)
+    # 4. Calcula o Beta para cada uma dessas diferenças reais
+    betas = []
+    dist_normal = statistics.NormalDist(mu=0, sigma=1)
     
-    # Curva da Amostra B
-    y_B = (1 / (est_B.desvio_padrao_amostral * np.sqrt(2 * np.pi)) * np.exp(-0.5 * ((x - est_B.media_amostral) / est_B.desvio_padrao_amostral) ** 2))
-    plt.plot(x, y_B, label=f"Amostra B ($\mu$ = {est_B.media_amostral:.2f}, $s$ = {est_B.desvio_padrao_amostral:.2f})", 
-             color="#ff7f0e", linewidth=2.5)
-    plt.fill_between(x, y_B, color="#ff7f0e", alpha=0.15)
+    for d in valores_diferenca_real:
+        # Fórmula teórica do Beta para duas amostras (bilateral)
+        termo_superior = z_critico - (d / erro_combinado)
+        termo_inferior = -z_critico - (d / erro_combinado)
+        
+        beta_d = dist_normal.cdf(termo_superior) - dist_normal.cdf(termo_inferior)
+        betas.append(beta_d)
+        
+    # 5. Descobre a posição da nossa diferença amostral observada no gráfico
+    diferenca_observada = est_A.media_amostral - est_B.media_amostral # 50 - 52 = -2.0
+    termo_sup_obs = z_critico - (diferenca_observada / erro_combinado)
+    termo_inf_obs = -z_critico - (diferenca_observada / erro_combinado)
+    beta_observado = dist_normal.cdf(termo_sup_obs) - dist_normal.cdf(termo_inf_obs)
+
+    # 6. Construção do Gráfico CCO usando Matplotlib
+    plt.figure("Curva Característica de Operação (CCO)", figsize=(10, 6))
     
-    # Linhas verticais indicando onde ficam as médias reais encontradas
-    plt.axvline(est_A.media_amostral, color="#1f77b4", linestyle="--", alpha=0.7)
-    plt.axvline(est_B.media_amostral, color="#ff7f0e", linestyle="--", alpha=0.7)
+    plt.plot(valores_diferenca_real, betas, color="purple", linewidth=2.5, label="Curva CCO ($\beta$)")
+    plt.fill_between(valores_diferenca_real, betas, color="purple", alpha=0.1)
     
-    # Estilização do gráfico (idêntica ao padrão do seu projeto)
-    plt.title("Afastamento Visual entre as Populações A e B", fontsize=14, pad=15)
-    plt.xlabel("Valores", fontsize=12)
-    plt.ylabel("Densidade de Probabilidade", fontsize=12)
+    # Ponto marcador indicando o cenário atual da sua amostra (Diferença de -2.0)
+    plt.plot(diferenca_observada, beta_observado, "ro", markersize=8, 
+             label=f"Sua Amostra ($\Delta$ = {diferenca_observada:.2f}, $\beta$ = {beta_observado:.4f})")
+    
+    # Linhas guias tracejadas apontando para o nosso ponto
+    plt.axvline(diferenca_observada, color="red", linestyle=":", alpha=0.7)
+    plt.axhline(beta_observado, color="red", linestyle=":", alpha=0.7)
+    
+    # Títulos e formatação
+    plt.title("Curva Característica de Operação (CCO) - Duas Amostras", fontsize=14, pad=15)
+    plt.xlabel("Verdadeira Diferença entre as Médias ($\mu_A - \mu_B$)", fontsize=12)
+    plt.ylabel("Probabilidade de Erro Tipo II ($\beta$)", fontsize=12)
+    plt.ylim(-0.05, 1.05)
     plt.grid(True, linestyle=":", alpha=0.6)
     plt.legend(fontsize=11, loc="upper right")
     

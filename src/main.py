@@ -103,7 +103,7 @@ class JanelaDuasAmostras(Toplevel):
             self.pai.txt_resultado.insert(END, "\n".join(relatorio))
 
             # ESSA LINHA DISPARA O GRÁFICO ANTES DE FECHAR O POP-UP:
-            mostrar_grafico_duas_amostras(est_A, est_B)
+            mostrar_grafico_duas_amostras(est_A, est_B, alpha)
 
             self.destroy()
         except Exception as erro:
