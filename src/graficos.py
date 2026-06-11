@@ -17,7 +17,7 @@ def mostrar_grafico_duas_amostras(est_A, est_B, alpha=0.05):
     z_critico = statistics.NormalDist().inv_cdf(1 - alpha / 2)
     
     # 3. Cria um intervalo de possíveis diferenças reais entre as médias (Eixo X do gráfico)
-    # Vamos cobrir desde uma diferença de -6 até +6 para o gráfico ficar amplo
+    # Cobre de -6 até +6 para garantir uma boa visualização da curva em formato de "U" invertido
     valores_diferenca_real = np.linspace(-6, 6, 500)
     
     # 4. Calcula o Beta para cada uma dessas diferenças reais
@@ -33,7 +33,7 @@ def mostrar_grafico_duas_amostras(est_A, est_B, alpha=0.05):
         betas.append(beta_d)
         
     # 5. Descobre a posição da nossa diferença amostral observada no gráfico
-    diferenca_observada = est_A.media_amostral - est_B.media_amostral # 50 - 52 = -2.0
+    diferenca_observada = est_A.media_amostral - est_B.media_amostral # 50.0 - 52.0 = -2.0
     termo_sup_obs = z_critico - (diferenca_observada / erro_combinado)
     termo_inf_obs = -z_critico - (diferenca_observada / erro_combinado)
     beta_observado = dist_normal.cdf(termo_sup_obs) - dist_normal.cdf(termo_inf_obs)
@@ -41,21 +41,24 @@ def mostrar_grafico_duas_amostras(est_A, est_B, alpha=0.05):
     # 6. Construção do Gráfico CCO usando Matplotlib
     plt.figure("Curva Característica de Operação (CCO)", figsize=(10, 6))
     
-    plt.plot(valores_diferenca_real, betas, color="purple", linewidth=2.5, label="Curva CCO ($\beta$)")
+    # Plota a curva CCO livre de caracteres LaTeX problemáticos
+    plt.plot(valores_diferenca_real, betas, color="purple", linewidth=2.5, label="Curva CCO (Beta)")
     plt.fill_between(valores_diferenca_real, betas, color="purple", alpha=0.1)
     
-    # Ponto marcador indicando o cenário atual da sua amostra (Diferença de -2.0)
+    # Marcador vermelho do ponto da sua amostra real
     plt.plot(diferenca_observada, beta_observado, "ro", markersize=8, 
-             label=f"Sua Amostra ($\Delta$ = {diferenca_observada:.2f}, $\beta$ = {beta_observado:.4f})")
+             label=f"Sua Amostra (Dif = {diferenca_observada:.2f}, Beta = {beta_observado:.4f})")
     
-    # Linhas guias tracejadas apontando para o nosso ponto
+    # Linhas guias tracejadas apontando para o ponto da amostra
     plt.axvline(diferenca_observada, color="red", linestyle=":", alpha=0.7)
     plt.axhline(beta_observado, color="red", linestyle=":", alpha=0.7)
     
-    # Títulos e formatação
-    plt.title("Curva Característica de Operação (CCO) - Duas Amostras", fontsize=14, pad=15)
-    plt.xlabel("Verdadeira Diferença entre as Médias ($\mu_A - \mu_B$)", fontsize=12)
-    plt.ylabel("Probabilidade de Erro Tipo II ($\beta$)", fontsize=12)
+    # Títulos e eixos formatados com texto simples e limpo
+    plt.title("Curva Caracteristica de Operacao (CCO) - Duas Amostras", fontsize=14, pad=15)
+    plt.xlabel("Verdadeira Diferenca entre as Medias (mu_A - mu_B)", fontsize=12)
+    plt.ylabel("Probabilidade de Erro Tipo II (Beta)", fontsize=12)
+    
+    # Ajustes finais de layout
     plt.ylim(-0.05, 1.05)
     plt.grid(True, linestyle=":", alpha=0.6)
     plt.legend(fontsize=11, loc="upper right")
