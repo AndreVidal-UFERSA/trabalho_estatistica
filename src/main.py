@@ -71,12 +71,7 @@ class JanelaDuasAmostras(Toplevel):
             est_B = Estimador(dados_B)
 
             # Cálculos Inferenciais Combinados (Bilateral)
-            diferenca = est_A.media_amostral - est_B.media_amostral
-            erro_combinado = math.sqrt((est_A.variancia_amostral / est_A.n) + (est_B.variancia_amostral / est_B.n))
-            z_calc = (diferenca - 0) / erro_combinado
-            
-            z_critico = statistics.NormalDist().inv_cdf(1 - alpha / 2)
-            p_valor = 2 * (1 - statistics.NormalDist().cdf(abs(z_calc)))
+            p_valor, z_critico, z_calc = Estimador.calculos_inferenciais(est_A, est_B, alpha)
             
             rejeita = abs(z_calc) > z_critico
             conclusao = "Rejeitar H0 (Médias são estatisticamente Diferentes)" if rejeita else "Não Rejeitar H0 (Médias são Iguais)"

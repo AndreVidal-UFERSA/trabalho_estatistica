@@ -138,3 +138,14 @@ class Estimador:
         dist = statistics.NormalDist()
         # Subtrai a área da cauda inferior da área total acumulada até o limite superior para obter a região de aceitação (Beta)
         return dist.cdf(z_beta_superior) - dist.cdf(z_beta_inferior)
+
+    @staticmethod
+    def calculos_inferenciais(est_A: Estimador, est_B: Estimador, alpha: float) -> tuple[float,float,float]:
+        diferenca = est_A.media_amostral - est_B.media_amostral
+        erro_combinado = math.sqrt((est_A.variancia_amostral / est_A.n) + (est_B.variancia_amostral / est_B.n))
+        z_calc = (diferenca - 0) / erro_combinado
+        
+        z_critico = statistics.NormalDist().inv_cdf(1 - alpha / 2)
+        p_valor = 2 * (1 - statistics.NormalDist().cdf(abs(z_calc)))
+
+        return p_valor, z_critico, z_calc
