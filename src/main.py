@@ -197,15 +197,15 @@ class Aplicacao(Tk):
 
             if tipo == "bilateral":
                 valor_p = estimador.valor_p_bilateral(mu0)
-                beta = estimador.beta_bilateral(mu0, mu1, alpha)
+                beta = estimador.beta_bilateral(mu0, mu1, alpha, estimador.erro_padrao)
                 descricao = f"H0: μ = {mu0}\nH1: μ ≠ {mu0}"
             elif tipo == "unilateral à direita":
                 valor_p = estimador.valor_p_unilateral_maior(mu0)
-                beta = estimador.beta_unilateral_maior(mu0, mu1, alpha)
+                beta = estimador.beta_unilateral_maior(mu0, mu1, alpha, estimador.erro_padrao)
                 descricao = f"H0: μ = {mu0}\nH1: μ > {mu0}"
             else:
                 valor_p = estimador.valor_p_unilateral_menor(mu0)
-                beta = estimador.beta_unilateral_menor(mu0, mu1, alpha)
+                beta = estimador.beta_unilateral_menor(mu0, mu1, alpha, estimador.erro_padrao)
                 descricao = f"H0: μ = {mu0}\nH1: μ < {mu0}"
 
             estatistica = estimador.z_escore(mu0)

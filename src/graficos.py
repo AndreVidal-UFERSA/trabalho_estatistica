@@ -74,26 +74,6 @@ def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float, n_cco: int, 
     # Inicializa a matriz de subplots 2x2 para renderizar os 4 gráficos simultaneamente
     fig, ax = plt.subplots(2, 2)
 
-    # O intervalo de simulação das alternativas deve orbitar a hipótese testada (mu0)
-    # Gera 200 pontos de médias alternativas (μ) partindo de μ0 até 5 erros padrões acima
-    mus = np.linspace(mu0, mu0 + 5 * estimador.erro_padrao, 200)
-    betas = []
-
-    # Para mostrar o efeito do tamanho da amostra, podemos calcular o beta para diferentes tamanhos de amostra
-    # Define três tamanhos de amostra para comparação: metade de n_cco (mínimo 2), o próprio n_cco, e o dobro
-    tamanhos_n = [max(2, n_cco // 2), n_cco, n_cco * 2]
-
-    # Loop para simular o valor do erro Tipo II (beta) original para cada média alternativa (μ)
-    for mu in mus:
-        beta = estimador.beta_unilateral_maior(
-            media_hipotese=mu0,
-            media_alternativa=mu,
-            alfa=alpha
-        )
-
-        betas.append(beta)
-        
-        print(f"μ={mu} -> β={beta}")
 
     # --- QUADRANTE [0, 1]: GRÁFICO DA REGIÃO DE REJEIÇÃO UNILATERAL (MAIOR E MENOR) ---
     chart_uni = ax[0, 1]
@@ -251,6 +231,31 @@ def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float, n_cco: int, 
 
         histogram.legend()
 
+    #CCO
+
+    # O intervalo de simulação das alternativas deve orbitar a hipótese testada (mu0)
+    # Gera 200 pontos de médias alternativas (μ) partindo de μ0 até 5 erros padrões acima
+    mus = np.linspace(mu0, mu0 + 5 * estimador.erro_padrao, 200)
+
+    # Para mostrar o efeito do tamanho da amostra, podemos calcular o beta para diferentes tamanhos de amostra
+    # Define três tamanhos de amostra para comparação: metade de n_cco (mínimo 2), o próprio n_cco, e o dobro
+    tamanhos_n = [max(2, n_cco // 2), n_cco, n_cco * 2]
+
+    betas = []
+    
+    # Loop para simular o valor do erro Tipo II (beta) original para cada média alternativa (μ)
+    for mu in mus:
+        beta = estimador.beta_unilateral_maior(
+            media_hipotese=mu0,
+            media_alternativa=mu,
+            alfa=alpha,
+            erro_padrao=estimador.erro_padrao
+        )
+
+        betas.append(beta)
+        
+        print(f"μ={mu} -> β={beta}")
+
     # --- QUADRANTE [1, 1]: CURVA CARACTERÍSTICA DE OPERAÇÃO (CCO) - ERRO TIPO II (β) ---
     cco = ax[1, 1]
     cco.set_title("CCO")
@@ -262,14 +267,12 @@ def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float, n_cco: int, 
         
         betas_n = []
         for mu in mus:
-            # Encontra o valor Z crítico unilateral para o alpha estabelecido
-            z_critico = statistics.NormalDist().inv_cdf(1 - alpha)
-            # Define a fronteira de corte em unidades da variável original
-            ponto_corte = mu0 + (z_critico * erro_padrao_simulado)
-            # Calcula o score Z para a hipótese alternativa μ sob avaliação
-            z_beta = (ponto_corte - mu) / erro_padrao_simulado
-            # Integra a probabilidade acumulada (CDF) para obter o beta correspondente
-            betas_n.append(statistics.NormalDist().cdf(z_beta))
+            betas_n.append(estimador.beta_unilateral_maior(
+                media_hipotese=mu0,
+                media_alternativa=mu,
+                alfa=alpha,
+                erro_padrao=erro_padrao_simulado
+            ))
             
         # O Matplotlib vai plotar uma linha de cada cor automaticamente para cada n
         cco.plot(mus, betas_n, label=f"n = {n_teste}")
@@ -293,11 +296,12 @@ def mostrar_grafico(estimador: Estimador, alpha: float, mu0: float, n_cco: int, 
         
         betas_n = []
         for mu in mus:
-            z_critico = statistics.NormalDist().inv_cdf(1 - alpha)
-            ponto_corte = mu0 + (z_critico * erro_padrao_simulado)
-            z_beta = (ponto_corte - mu) / erro_padrao_simulado
-            # Calcula o complemento da CDF, ou seja, a probabilidade de rejeitar H0 corretamente (Poder = 1 - beta)
-            betas_n.append(1-(statistics.NormalDist().cdf(z_beta)))
+            betas_n.append(1 - estimador.beta_unilateral_maior(
+                media_hipotese=mu0,
+                media_alternativa=mu,
+                alfa=alpha,
+                erro_padrao=erro_padrao_simulado
+            ))
             
         # O Matplotlib vai plotar uma linha de cada cor automaticamente para cada n
         cco.plot(mus, betas_n, label=f"n = {n_teste}")

@@ -100,28 +100,28 @@ class Estimador:
         return statistics.NormalDist().cdf(z_escore)
     
     # --- CÁLCULO DO ERRO TIPO II (BETA) ---
-    def beta_unilateral_maior(self, media_hipotese: float, media_alternativa: float, alfa: float) -> float:
+    def beta_unilateral_maior(self, media_hipotese: float, media_alternativa: float, alfa: float, erro_padrao: float) -> float:
         """
         Calcula a probabilidade do Erro Tipo II (Beta) para um cenário unilateral à direita: 
         a probabilidade de não rejeitar H0 quando a hipótese alternativa (media_alternativa) é a verdadeira.
         """
         z_critico = self.valor_critico_unilateral_maior(alfa)
         # Transforma o ponto crítico da variável original de volta em uma unidade Z centrada em H1
-        z_beta = (z_critico * self.erro_padrao - (media_alternativa - media_hipotese)) / self.erro_padrao
+        z_beta = (z_critico * erro_padrao - (media_alternativa - media_hipotese)) / erro_padrao
         return statistics.NormalDist().cdf(z_beta)
     
 
-    def beta_unilateral_menor(self, media_hipotese: float, media_alternativa: float, alfa: float) -> float:
+    def beta_unilateral_menor(self, media_hipotese: float, media_alternativa: float, alfa: float, erro_padrao: float) -> float:
         """
         Calcula a probabilidade do Erro Tipo II (Beta) para um cenário unilateral à esquerda:
         a probabilidade de falhar em rejeitar H0 dada uma média alternativa menor que a da hipótese nula.
         """
         z_critico = self.valor_critico_unilateral_menor(alfa) 
         # Calcula a posição da linha crítica sob a nova distribuição centrada na hipótese alternativa
-        z_beta = (z_critico * self.erro_padrao - (media_alternativa - media_hipotese)) / self.erro_padrao
+        z_beta = (z_critico * erro_padrao - (media_alternativa - media_hipotese)) / erro_padrao
         return 1 - statistics.NormalDist().cdf(z_beta)
     
-    def beta_bilateral(self, media_hipotese: float, media_alternativa: float, alfa: float) -> float:
+    def beta_bilateral(self, media_hipotese: float, media_alternativa: float, alfa: float, erro_padrao: float) -> float:
         """
         Calcula a probabilidade de cometer o Erro Tipo II (Beta) em testes bilaterais.
         Avalia a probabilidade acumulada contida entre os dois limites de aceitação críticos
@@ -132,8 +132,8 @@ class Estimador:
         z_critico_inferior = self.valor_critico_unilateral_menor(alfa / 2)
         
         # Reposiciona estatisticamente as fronteiras em escores Z baseados na distribuição alternativa real
-        z_beta_superior = (z_critico_superior * self.erro_padrao - (media_alternativa - media_hipotese)) / self.erro_padrao
-        z_beta_inferior = (z_critico_inferior * self.erro_padrao - (media_alternativa - media_hipotese)) / self.erro_padrao
+        z_beta_superior = (z_critico_superior * erro_padrao - (media_alternativa - media_hipotese)) / erro_padrao
+        z_beta_inferior = (z_critico_inferior * erro_padrao - (media_alternativa - media_hipotese)) / erro_padrao
         
         dist = statistics.NormalDist()
         # Subtrai a área da cauda inferior da área total acumulada até o limite superior para obter a região de aceitação (Beta)
